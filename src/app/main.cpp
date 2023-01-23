@@ -4,6 +4,7 @@
 #include <math/quaternion.hpp>
 #include <iostream>
 #include <string>
+#include "Serialization.hpp"
 
 struct ServerData
 {
@@ -74,6 +75,19 @@ int main()
 
 					// On a reçu des données d'un joueur
 					case ENetEventType::ENET_EVENT_TYPE_RECEIVE:
+						std::size_t offset = 0;
+
+						std::vector<std::uint8_t> byteArray;
+						byteArray.resize(enet_packet_get_length(event.packet));
+						std::memcpy(&byteArray[0], event.packet->data, enet_packet_get_length(event.packet));
+
+						std::cout << byteArray.size() << std::endl;
+
+						int i = Unserialize_i32(byteArray, offset);
+						std::string str = Unserialize_str(byteArray, offset);
+
+						std::cout << i << " " << str << std::endl;
+
 						std::cout << "Peer #" << enet_peer_get_id(event.peer) << " sent data (" << enet_packet_get_length(event.packet) << " bytes)" << std::endl;
 						enet_packet_dispose(event.packet);
 						break;
