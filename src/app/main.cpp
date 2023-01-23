@@ -59,10 +59,21 @@ int main()
 				switch (event.type)
 				{
 					// Un nouveau joueur s'est connecté
-					case ENetEventType::ENET_EVENT_TYPE_CONNECT:
+					case ENetEventType::ENET_EVENT_TYPE_CONNECT: {
 						std::cout << "Peer #" << enet_peer_get_id(event.peer) << " connected!" << std::endl;
-						break;
 
+						std::vector<std::uint8_t> byteArray;
+						ENetPacket* packet;
+
+						Serialize_i32(byteArray, 69);
+						Serialize_str(byteArray, "COUCOU TOI LE CLIENT !");
+
+						packet = enet_packet_create(byteArray.data(), byteArray.size(), 0);
+						enet_peer_send(event.peer, 0, packet);
+
+						enet_packet_dispose(packet);
+						break;
+					}
 					// Un joueur s'est déconnecté
 					case ENetEventType::ENET_EVENT_TYPE_DISCONNECT:
 						std::cout << "Peer #" << enet_peer_get_id(event.peer) << " disconnected!" << std::endl;
@@ -75,20 +86,18 @@ int main()
 
 					// On a reçu des données d'un joueur
 					case ENetEventType::ENET_EVENT_TYPE_RECEIVE:
+						std::cout << "Peer #" << enet_peer_get_id(event.peer) << " sent data (" << enet_packet_get_length(event.packet) << " bytes)" << std::endl;
 						std::size_t offset = 0;
 
 						std::vector<std::uint8_t> byteArray;
 						byteArray.resize(enet_packet_get_length(event.packet));
 						std::memcpy(&byteArray[0], event.packet->data, enet_packet_get_length(event.packet));
 
-						std::cout << byteArray.size() << std::endl;
-
 						int i = Unserialize_i32(byteArray, offset);
 						std::string str = Unserialize_str(byteArray, offset);
 
 						std::cout << i << " " << str << std::endl;
 
-						std::cout << "Peer #" << enet_peer_get_id(event.peer) << " sent data (" << enet_packet_get_length(event.packet) << " bytes)" << std::endl;
 						enet_packet_dispose(event.packet);
 						break;
 				}
