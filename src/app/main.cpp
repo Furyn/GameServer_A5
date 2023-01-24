@@ -5,6 +5,7 @@
 #include <iostream>
 #include <string>
 #include "Serialization.hpp"
+#include "Protocole.hpp"
 
 struct ServerData
 {
@@ -12,6 +13,7 @@ struct ServerData
 };
 
 void tick(ServerData& serverData);
+void handle_message(const std::vector<std::uint8_t>& message, ENetEvent event);
 
 int main()
 {
@@ -62,13 +64,11 @@ int main()
 					case ENetEventType::ENET_EVENT_TYPE_CONNECT: {
 						std::cout << "Peer #" << enet_peer_get_id(event.peer) << " connected!" << std::endl;
 
-						std::vector<std::uint8_t> byteArray;
-						ENetPacket* packet;
+						PlayerNamePacket namePacket;
+						namePacket.name = "COUCOU TOI";
 
-						Serialize_i32(byteArray, 69);
-						Serialize_str(byteArray, "COUCOU TOI LE CLIENT !");
-
-						packet = enet_packet_create(byteArray.data(), byteArray.size(), 0);
+						ENetPacket* packet = build_packet(namePacket, ENET_PACKET_FLAG_RELIABLE);
+						std::cout << packet->dataLength << std::endl;
 						enet_peer_send(event.peer, 0, packet);
 
 						enet_packet_dispose(packet);
@@ -87,16 +87,11 @@ int main()
 					// On a reçu des données d'un joueur
 					case ENetEventType::ENET_EVENT_TYPE_RECEIVE:
 						std::cout << "Peer #" << enet_peer_get_id(event.peer) << " sent data (" << enet_packet_get_length(event.packet) << " bytes)" << std::endl;
-						std::size_t offset = 0;
+						
+						std::vector<std::uint8_t> content(enet_packet_get_length(event.packet));
+						std::memcpy(&content[0], event.packet->data, enet_packet_get_length(event.packet));
 
-						std::vector<std::uint8_t> byteArray;
-						byteArray.resize(enet_packet_get_length(event.packet));
-						std::memcpy(&byteArray[0], event.packet->data, enet_packet_get_length(event.packet));
-
-						int i = Unserialize_i32(byteArray, offset);
-						std::string str = Unserialize_str(byteArray, offset);
-
-						std::cout << i << " " << str << std::endl;
+						handle_message(content, event);
 
 						enet_packet_dispose(event.packet);
 						break;
@@ -118,4 +113,24 @@ int main()
 
 void tick(ServerData& serverData)
 {
+}
+
+void handle_message(const std::vector<std::uint8_t>& message, ENetEvent event) {
+
+	std::size_t offset = 0;
+	Opcode opcode = static_cast<Opcode>(Unserialize_i32(message, offset));
+	switch (opcode)
+	{
+		case Opcode::C_PlayerName: {
+			PlayerNamePacket playerName = PlayerNamePacket::Unserialize(message, offset);
+			std::cout << "Player #" << enet_peer_get_id(event.peer) << " Name : " << playerName.name << std::endl;
+			break;
+		}
+		default: {
+
+			break;
+		}
+	}
+	
+
 }
