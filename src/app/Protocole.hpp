@@ -7,10 +7,7 @@
 enum class Opcode : std::int32_t
 {
 	C_PlayerName = 0,
-	C_PlayerMovement,
-	S_WorldInit,
-	S_PlayerList,
-	S_PlayersPosition
+	S_PlayerNumber = 1,
 };
 
 // Un joueur souhaite renseigner son nom
@@ -22,6 +19,17 @@ struct PlayerNamePacket
 
 	void Serialize(std::vector<std::uint8_t>& byteArray) const;
 	static PlayerNamePacket Unserialize(const std::vector<std::uint8_t>& byteArray, std::size_t& offset);
+};
+
+// On dit au joueur si il est J1 ou J2
+struct playerNumberPacket
+{
+	static constexpr Opcode opcode = Opcode::S_PlayerNumber;
+
+	int32_t joueurNumber;
+
+	void Serialize(std::vector<std::uint8_t>& byteArray) const;
+	static playerNumberPacket Unserialize(const std::vector<std::uint8_t>& byteArray, std::size_t& offset);
 };
 
 // Petite fonction d'aide pour construire un packet ENet à partir d'une de nos structures de packet, insère automatiquement l'opcode au début des données

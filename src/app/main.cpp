@@ -64,10 +64,15 @@ int main()
 					case ENetEventType::ENET_EVENT_TYPE_CONNECT: {
 						std::cout << "Peer #" << enet_peer_get_id(event.peer) << " connected!" << std::endl;
 
-						PlayerNamePacket namePacket;
-						namePacket.name = "COUCOU TOI";
+						if (enet_peer_get_id(event.peer) > 1) {
+							enet_peer_disconnect_now(event.peer, 0);
+							break;
+						}
 
-						ENetPacket* packet = build_packet(namePacket, ENET_PACKET_FLAG_RELIABLE);
+						playerNumberPacket playerNumberPacket;
+						playerNumberPacket.joueurNumber = enet_peer_get_id(event.peer) + 1;
+
+						ENetPacket* packet = build_packet(playerNumberPacket, ENET_PACKET_FLAG_RELIABLE);
 						std::cout << packet->dataLength << std::endl;
 						enet_peer_send(event.peer, 0, packet);
 
