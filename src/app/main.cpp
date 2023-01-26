@@ -37,6 +37,8 @@ int main()
 		return EXIT_FAILURE;
 	}
 
+	srand(time(NULL));
+
 	// On planifie la libération d'enet à la fin de la fonction
 	ExitCapsule uninitEnet([&] { enet_deinitialize(); });
 
@@ -93,7 +95,7 @@ int main()
 
 						serverData.nbPlayer++;
 
-						if (serverData.nbPlayer == 1) {
+						if (serverData.nbPlayer == 2) {
 							serverData.gameStarted = true;
 						}
 

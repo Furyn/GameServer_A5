@@ -2,7 +2,7 @@
 #include <iostream>
 
 Ball::Ball() {
-    direction = { -1.f, 0.f };
+    direction = { (float)(rand() % 1 + (-1)) , (float)(rand() % 1 + (-1)) };
 }
 
 Ball::~Ball() {}
@@ -42,13 +42,6 @@ void Ball::HitPlayer(Player& player)
     float distance = position.x - player.position.x;
     if (distance > 0.25f || distance < -0.25f)
         return;
-
-    if (player.playerNumber == 1) {
-        std::cout << "PING" << std::endl;
-    }
-    else {
-        std::cout << "PONG" << std::endl;
-    }
 
     // Partie centre Player 
     if (position.y > player.position.y - 0.5f && position.y < player.position.y + 0.5f)
