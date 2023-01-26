@@ -26,7 +26,7 @@ playerNumberPacket playerNumberPacket::Unserialize(const std::vector<std::uint8_
 	return packet;
 }
 
-void playerPositionPacket::Serialize(std::vector<std::uint8_t>& byteArray) const
+void PlayerPositionPacket::Serialize(std::vector<std::uint8_t>& byteArray) const
 {
 	Serialize_i32(byteArray, playerNumber);
 	Serialize_f32(byteArray, playerPosX);
@@ -34,9 +34,9 @@ void playerPositionPacket::Serialize(std::vector<std::uint8_t>& byteArray) const
 	Serialize_i32(byteArray, playerNumber);
 }
 
-playerPositionPacket playerPositionPacket::Unserialize(const std::vector<std::uint8_t>& byteArray, std::size_t& offset)
+PlayerPositionPacket PlayerPositionPacket::Unserialize(const std::vector<std::uint8_t>& byteArray, std::size_t& offset)
 {
-	playerPositionPacket packet;
+	PlayerPositionPacket packet;
 	packet.playerNumber = Unserialize_i32(byteArray, offset);
 	packet.playerPosX = Unserialize_f32(byteArray, offset);
 	packet.playerPosY = Unserialize_f32(byteArray, offset);
@@ -61,6 +61,21 @@ PlayerInputPacket PlayerInputPacket::Unserialize(const std::vector<std::uint8_t>
 
 	packet.isUp = (value & (1 << 0));
 	packet.isDown = (value & (1 << 1));
+
+	return packet;
+}
+
+void BallPositionPacket::Serialize(std::vector<std::uint8_t>& byteArray) const
+{
+	Serialize_f32(byteArray, ballPosX);
+	Serialize_f32(byteArray, ballPosY);
+}
+
+BallPositionPacket BallPositionPacket::Unserialize(const std::vector<std::uint8_t>& byteArray, std::size_t& offset)
+{
+	BallPositionPacket packet;
+	packet.ballPosX = Unserialize_f32(byteArray, offset);
+	packet.ballPosY = Unserialize_f32(byteArray, offset);
 
 	return packet;
 }

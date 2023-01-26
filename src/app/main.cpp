@@ -25,6 +25,7 @@ struct ServerData
 void game_tick(ServerData& serverData);
 void network_tick(ServerData& serverData);
 void SendPosPlayer(Player player, std::optional <ENetPeer*> peer);
+void SendPosBall(Ball ball, std::optional <ENetPeer*> peer);
 void handle_message(const std::vector<std::uint8_t>& message, ENetEvent event, ServerData& serverData);
 
 int main()
@@ -179,10 +180,13 @@ void network_tick(ServerData& serverData)
 	//Send pos to J1
 	SendPosPlayer(serverData.player1, serverData.player1.peer);
 	SendPosPlayer(serverData.player2, serverData.player1.peer);
+	SendPosBall(serverData.ball, serverData.player1.peer);
 
 	//Send pos to J2
 	SendPosPlayer(serverData.player1, serverData.player2.peer);
 	SendPosPlayer(serverData.player2, serverData.player2.peer);
+	SendPosBall(serverData.ball, serverData.player2.peer);
+
 }
 
 void SendPosPlayer(Player player, std::optional <ENetPeer*> peer) {
@@ -190,13 +194,28 @@ void SendPosPlayer(Player player, std::optional <ENetPeer*> peer) {
 		return;
 	}
 
-	playerPositionPacket playerPacket;
+	PlayerPositionPacket playerPacket;
 	playerPacket.playerNumber = player.playerNumber;
 	playerPacket.playerPosX = player.position.x;
 	playerPacket.playerPosY = player.position.y;
 	playerPacket.inputIndex = player.playerNumber;
 
 	ENetPacket* packet = build_packet(playerPacket, ENET_PACKET_FLAG_NONE);
+	enet_peer_send(peer.value(), 0, packet);
+
+	enet_packet_dispose(packet);
+}
+
+void SendPosBall(Ball ball, std::optional <ENetPeer*> peer){
+	if (!peer) {
+		return;
+	}
+
+	BallPositionPacket ballPacket;
+	ballPacket.ballPosX = ball.position.x;
+	ballPacket.ballPosY = ball.position.y;
+
+	ENetPacket* packet = build_packet(ballPacket, ENET_PACKET_FLAG_NONE);
 	enet_peer_send(peer.value(), 0, packet);
 
 	enet_packet_dispose(packet);
