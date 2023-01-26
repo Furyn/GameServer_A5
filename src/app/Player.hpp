@@ -1,4 +1,6 @@
 #pragma once
+#include <enet/enet.h>
+#include <optional>
 #include "constants.hpp"
 #include "math/vector2.hpp"
 
@@ -11,6 +13,7 @@ public :
 	bool down = false;
 	Vector2 position;
 	int playerNumber = 0;
+	std::optional<ENetPeer*> peer;
 
 	void UpdatePhysics(float elapsedTime);
 };

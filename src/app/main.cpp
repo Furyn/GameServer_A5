@@ -4,6 +4,7 @@
 #include <math/quaternion.hpp>
 #include <iostream>
 #include <string>
+#include <optional>
 #include "Serialization.hpp"
 #include "Protocole.hpp"
 #include "math/vector2.hpp"
@@ -23,7 +24,8 @@ struct ServerData
 
 void game_tick(ServerData& serverData);
 void network_tick(ServerData& serverData);
-void handle_message(const std::vector<std::uint8_t>& message, ENetEvent event);
+void SendPosPlayer(Player player, std::optional <ENetPeer*> peer);
+void handle_message(const std::vector<std::uint8_t>& message, ENetEvent event, ServerData& serverData);
 
 int main()
 {
@@ -46,8 +48,10 @@ int main()
 
 	serverData.player1.position = { -2 , 0 };
 	serverData.player1.playerNumber = 1;
+
 	serverData.player2.position = { 16 , 0 };
 	serverData.player2.playerNumber = 2;
+
 	serverData.ball.position = { 7 , 0 };
 
 	serverData.host = enet_host_create(&address, 10, 10, 0, 0, 0);
@@ -92,6 +96,13 @@ int main()
 							serverData.gameStarted = true;
 						}
 
+						if (enet_peer_get_id(event.peer) == 0) {
+							serverData.player1.peer = event.peer;
+						}
+						else {
+							serverData.player2.peer = event.peer;
+						}
+
 						playerNumberPacket playerNumberPacket;
 						playerNumberPacket.joueurNumber = enet_peer_get_id(event.peer) + 1;
 
@@ -118,7 +129,7 @@ int main()
 						std::vector<std::uint8_t> content(enet_packet_get_length(event.packet));
 						std::memcpy(&content[0], event.packet->data, enet_packet_get_length(event.packet));
 
-						handle_message(content, event);
+						handle_message(content, event, serverData);
 
 						enet_packet_dispose(event.packet);
 						break;
@@ -161,10 +172,37 @@ void game_tick(ServerData& serverData)
 
 void network_tick(ServerData& serverData)
 {
+	if (!serverData.gameStarted) {
+		return;
+	}
 
+	//Send pos to J1
+	SendPosPlayer(serverData.player1, serverData.player1.peer);
+	SendPosPlayer(serverData.player2, serverData.player1.peer);
+
+	//Send pos to J2
+	SendPosPlayer(serverData.player1, serverData.player2.peer);
+	SendPosPlayer(serverData.player2, serverData.player2.peer);
 }
 
-void handle_message(const std::vector<std::uint8_t>& message, ENetEvent event) {
+void SendPosPlayer(Player player, std::optional <ENetPeer*> peer) {
+	if (!peer) {
+		return;
+	}
+
+	playerPositionPacket playerPacket;
+	playerPacket.playerNumber = player.playerNumber;
+	playerPacket.playerPosX = player.position.x;
+	playerPacket.playerPosY = player.position.y;
+	playerPacket.inputIndex = player.playerNumber;
+
+	ENetPacket* packet = build_packet(playerPacket, ENET_PACKET_FLAG_NONE);
+	enet_peer_send(peer.value(), 0, packet);
+
+	enet_packet_dispose(packet);
+}
+
+void handle_message(const std::vector<std::uint8_t>& message, ENetEvent event, ServerData& serverData) {
 
 	std::size_t offset = 0;
 	Opcode opcode = static_cast<Opcode>(Unserialize_i32(message, offset));
@@ -173,6 +211,18 @@ void handle_message(const std::vector<std::uint8_t>& message, ENetEvent event) {
 		case Opcode::C_PlayerName: {
 			PlayerNamePacket playerName = PlayerNamePacket::Unserialize(message, offset);
 			std::cout << "Player #" << enet_peer_get_id(event.peer) << " Name : " << playerName.name << std::endl;
+			break;
+		}
+		case Opcode::C_PlayerInput: {
+			PlayerInputPacket playerInput = PlayerInputPacket::Unserialize(message, offset);
+			if (enet_peer_get_id(event.peer) == 0) {
+				serverData.player1.up = playerInput.isUp;
+				serverData.player1.down = playerInput.isDown;
+			}
+			else {
+				serverData.player2.up = playerInput.isUp;
+				serverData.player2.down = playerInput.isDown;
+			}
 			break;
 		}
 		default: {
