@@ -6,13 +6,23 @@
 #include <string>
 #include "Serialization.hpp"
 #include "Protocole.hpp"
+#include "math/vector2.hpp"
+#include "math/vector3.hpp"
+#include "Player.hpp"
+#include "Ball.hpp"
 
 struct ServerData
 {
 	ENetHost* host;
+	Player player1;
+	Player player2;
+	Ball ball;
+	bool gameStarted = false;
+	int nbPlayer = 0;
 };
 
-void tick(ServerData& serverData);
+void game_tick(ServerData& serverData);
+void network_tick(ServerData& serverData);
 void handle_message(const std::vector<std::uint8_t>& message, ENetEvent event);
 
 int main()
@@ -34,6 +44,12 @@ int main()
 
 	ServerData serverData;
 
+	serverData.player1.position = { -2 , 0 };
+	serverData.player1.playerNumber = 1;
+	serverData.player2.position = { 16 , 0 };
+	serverData.player2.playerNumber = 2;
+	serverData.ball.position = { 7 , 0 };
+
 	serverData.host = enet_host_create(&address, 10, 10, 0, 0, 0);
 	if (!serverData.host)
 	{
@@ -44,7 +60,8 @@ int main()
 	// On planifie la destruction du host ENet à la fin de la fonction
 	ExitCapsule freeHost([&] { enet_host_destroy(serverData.host); });
 
-	std::uint32_t nextTick = enet_time_get();
+	std::uint32_t nextGameTick = enet_time_get();
+	std::uint32_t nextNetworkTick = enet_time_get();
 
 	// Boucle principale
 	for (;;)
@@ -69,11 +86,16 @@ int main()
 							break;
 						}
 
+						serverData.nbPlayer++;
+
+						if (serverData.nbPlayer == 1) {
+							serverData.gameStarted = true;
+						}
+
 						playerNumberPacket playerNumberPacket;
 						playerNumberPacket.joueurNumber = enet_peer_get_id(event.peer) + 1;
 
 						ENetPacket* packet = build_packet(playerNumberPacket, ENET_PACKET_FLAG_RELIABLE);
-						std::cout << packet->dataLength << std::endl;
 						enet_peer_send(event.peer, 0, packet);
 
 						enet_packet_dispose(packet);
@@ -82,17 +104,17 @@ int main()
 					// Un joueur s'est déconnecté
 					case ENetEventType::ENET_EVENT_TYPE_DISCONNECT:
 						std::cout << "Peer #" << enet_peer_get_id(event.peer) << " disconnected!" << std::endl;
+						serverData.nbPlayer--;
 						break;
 
 					// Un joueur a été déconnecté par timeout
 					case ENetEventType::ENET_EVENT_TYPE_DISCONNECT_TIMEOUT:
 						std::cout << "Peer #" << enet_peer_get_id(event.peer) << " disconnected (timed out)!" << std::endl;
+						serverData.nbPlayer--;
 						break;
 
 					// On a reçu des données d'un joueur
 					case ENetEventType::ENET_EVENT_TYPE_RECEIVE:
-						std::cout << "Peer #" << enet_peer_get_id(event.peer) << " sent data (" << enet_packet_get_length(event.packet) << " bytes)" << std::endl;
-						
 						std::vector<std::uint8_t> content(enet_packet_get_length(event.packet));
 						std::memcpy(&content[0], event.packet->data, enet_packet_get_length(event.packet));
 
@@ -105,19 +127,41 @@ int main()
 			while (enet_host_check_events(serverData.host, &event) > 0);
 		}
 
-		// On déclenche un tick si suffisamment de temps s'est écoulé
-		if (now >= nextTick)
+		// On vérifie si assez de temps s'est écoulé pour faire avancer la logique du jeu
+		if (now >= nextGameTick)
 		{
-			tick(serverData);
-			nextTick += TickDelay;
+			// On met à jour la logique du jeu
+			game_tick(serverData);
+
+			// On prévoit la prochaine mise à jour
+			nextGameTick += gameTickInterval;
+		}
+
+		// Même chose pour le réseau
+		if (now >= nextNetworkTick)
+		{
+			network_tick(serverData);
+
+			nextNetworkTick += networkTickInterval;
 		}
 	}
 
 	return EXIT_SUCCESS;
 }
 
-void tick(ServerData& serverData)
+void game_tick(ServerData& serverData)
 {
+	if (!serverData.gameStarted) {
+		return;
+	}
+	serverData.player1.UpdatePhysics(gameTickInterval / TickRate);
+	serverData.player2.UpdatePhysics(gameTickInterval / TickRate);
+	serverData.ball.UpdatePhysics(serverData.player1, serverData.player2, gameTickInterval / TickRate);
+}
+
+void network_tick(ServerData& serverData)
+{
+
 }
 
 void handle_message(const std::vector<std::uint8_t>& message, ENetEvent event) {

@@ -4,5 +4,12 @@
 
 constexpr std::uint16_t AppPort = 14768;
 
-constexpr std::uint32_t TickRate = 50; //< Correspond au timestep de 0.02 côté Unity
-constexpr std::uint32_t TickDelay = 1000 / TickRate;
+constexpr std::uint32_t TickRate = 26; //< Pour matcher avec unity
+constexpr float gameTickInterval = 1.f / 30.f;
+constexpr float networkTickInterval = 1.f / 30.f;
+
+constexpr float playerBoundaryValue = 5.f;
+constexpr float playerSpeed = 5.f;
+
+constexpr float ballBoundaryValue = 5.f;
+constexpr float ballSpeed = 5.f;
