@@ -165,28 +165,30 @@ int main()
 
 void game_tick(ServerData& serverData)
 {
+	serverData.player1.UpdatePhysics(gameTickInterval / TickRate);
+	serverData.player2.UpdatePhysics(gameTickInterval / TickRate);
+
 	if (!serverData.gameStarted) {
 		return;
 	}
-	serverData.player1.UpdatePhysics(gameTickInterval / TickRate);
-	serverData.player2.UpdatePhysics(gameTickInterval / TickRate);
 	serverData.ball.UpdatePhysics(serverData.player1, serverData.player2, gameTickInterval / TickRate);
 }
 
 void network_tick(ServerData& serverData)
 {
-	if (!serverData.gameStarted) {
-		return;
-	}
-
 	//Send pos to J1
 	SendPosPlayer(serverData.player1, serverData.player1.peer);
 	SendPosPlayer(serverData.player2, serverData.player1.peer);
-	SendPosBall(serverData.ball, serverData.player1.peer);
 
 	//Send pos to J2
 	SendPosPlayer(serverData.player1, serverData.player2.peer);
 	SendPosPlayer(serverData.player2, serverData.player2.peer);
+
+	if (!serverData.gameStarted) {
+		return;
+	}
+
+	SendPosBall(serverData.ball, serverData.player1.peer);
 	SendPosBall(serverData.ball, serverData.player2.peer);
 
 }
