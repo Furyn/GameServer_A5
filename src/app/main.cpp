@@ -231,7 +231,6 @@ void handle_message(const std::vector<std::uint8_t>& message, ENetEvent event, S
 	{
 		case Opcode::C_PlayerName: {
 			PlayerNamePacket playerName = PlayerNamePacket::Unserialize(message, offset);
-			std::cout << "Player #" << enet_peer_get_id(event.peer) << " Name : " << playerName.name << std::endl;
 			break;
 		}
 		case Opcode::C_PlayerInput: {
