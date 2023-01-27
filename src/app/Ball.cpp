@@ -2,7 +2,7 @@
 #include <iostream>
 
 Ball::Ball() {
-    direction = { (float)(rand() % 1 + (-1)) , (float)(rand() % 1 + (-1)) };
+    RandDirection();
 }
 
 Ball::~Ball() {}
@@ -14,6 +14,12 @@ void Ball::UpdatePhysics(Player& player1, Player& player2, float elapsedTime)
     HitBoundaries();
 
     position += direction * ballSpeed * elapsedTime;
+
+    if (position.x < -4 || position.x > 18) {
+        
+        position = { 7 , 0 };
+        RandDirection();
+    }
 
     if (hasHitPlayer)
     {
@@ -60,4 +66,22 @@ void Ball::HitPlayer(Player& player)
     }
 
     hasHitPlayer = true;
+}
+
+void Ball::RandDirection()
+{
+    srand(time(NULL));
+
+    int random1 = rand() % 2;
+    float r1 = 1.f;
+
+    if (random1 == 0) {
+        r1 = -1.f;
+    }
+
+    float random2 = ((float)rand()) / (float)RAND_MAX;
+    float diff = 1 - (-1);
+    float r2 = random2 * diff;
+
+    direction = { r1 , r2 };
 }

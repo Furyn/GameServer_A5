@@ -37,8 +37,6 @@ int main()
 		return EXIT_FAILURE;
 	}
 
-	srand(time(NULL));
-
 	// On planifie la libération d'enet à la fin de la fonction
 	ExitCapsule uninitEnet([&] { enet_deinitialize(); });
 
@@ -88,7 +86,7 @@ int main()
 					case ENetEventType::ENET_EVENT_TYPE_CONNECT: {
 						std::cout << "Peer #" << enet_peer_get_id(event.peer) << " connected!" << std::endl;
 
-						if (enet_peer_get_id(event.peer) > 1) {
+						if (enet_peer_get_id(event.peer) > 2) {
 							enet_peer_disconnect_now(event.peer, 0);
 							break;
 						}

@@ -19,4 +19,5 @@ public:
 private:
 	void HitBoundaries();
 	void HitPlayer(Player& player);
+	void RandDirection();
 };

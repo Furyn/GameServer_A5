@@ -9,7 +9,7 @@ constexpr float gameTickInterval = 1.f / 30.f;
 constexpr float networkTickInterval = 1.f / 30.f;
 
 constexpr float playerBoundaryValue = 5.f;
-constexpr float playerSpeed = 5.f;
+constexpr float playerSpeed = 10.f;
 
 constexpr float ballBoundaryValue = 5.f;
-constexpr float ballSpeed = 5.f;
+constexpr float ballSpeed = 8.f;
